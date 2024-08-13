@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cessna 172M Performance Calculator</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <style>
         :root {
             --primary-color: #3498db;
@@ -43,6 +42,7 @@
         }
         .tab-container {
             display: flex;
+            flex-wrap: wrap;
             background-color: var(--secondary-color);
         }
         .tab {
@@ -115,12 +115,11 @@
             font-weight: bold;
             color: var(--secondary-color);
         }
-        #runway-container {
+        #wind-canvas {
             width: 100%;
-            height: 300px;
-            margin-top: 20px;
-            border-radius: 8px;
-            overflow: hidden;
+            height: 200px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
         }
         @media (max-width: 600px) {
             .tab-container {
@@ -129,12 +128,6 @@
             .input-group {
                 flex: 1 1 100%;
             }
-        }
-        #wind-canvas {
-            width: 100%;
-            height: 200px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
         }
     </style>
 </head>
@@ -146,6 +139,8 @@
             <button class="tab active" onclick="openTab(event, 'performance')">Performance</button>
             <button class="tab" onclick="openTab(event, 'temp-deviation')">Temperature Deviation</button>
             <button class="tab" onclick="openTab(event, 'wind')">Wind Components</button>
+            <button class="tab" onclick="openTab(event, 'tds')">Time/Distance/Speed</button>
+            <button class="tab" onclick="openTab(event, 'fuel')">Fuel Calculations</button>
         </div>
 
         <div id="performance" class="tab-content active">
@@ -210,6 +205,40 @@
             </div>
             <div id="wind-result" class="info"></div>
             <canvas id="wind-canvas"></canvas>
+        </div>
+
+        <div id="tds" class="tab-content">
+            <h2>Time/Distance/Speed Calculator</h2>
+            <div class="input-container">
+                <div class="input-group">
+                    <label for="tds-time">Time (hours):</label>
+                    <input type="number" id="tds-time" placeholder="Enter time">
+                </div>
+                <div class="input-group">
+                    <label for="tds-distance">Distance (NM):</label>
+                    <input type="number" id="tds-distance" placeholder="Enter distance">
+                </div>
+                <div class="input-group">
+                    <label for="tds-speed">Speed (knots):</label>
+                    <input type="number" id="tds-speed" placeholder="Enter speed">
+                </div>
+            </div>
+            <div id="tds-result" class="info"></div>
+        </div>
+
+        <div id="fuel" class="tab-content">
+            <h2>Fuel Calculator</h2>
+            <div class="input-container">
+                <div class="input-group">
+                    <label for="fuel-gph">Fuel Consumption (GPH):</label>
+                    <input type="number" id="fuel-gph" placeholder="Enter fuel consumption">
+                </div>
+                <div class="input-group">
+                    <label for="fuel-time">Flight Time (hours):</label>
+                    <input type="number" id="fuel-time" placeholder="Enter flight time">
+                </div>
+            </div>
+            <div id="fuel-result" class="info"></div>
         </div>
     </div>
 
@@ -385,65 +414,6 @@
 
         let scene, camera, renderer, runway, windArrow;
 
-        function initRunwayScene() {
-            scene = new THREE.Scene();
-            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-            renderer = new THREE.WebGLRenderer();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-            document.getElementById('runway-container').appendChild(renderer.domElement);
-
-            // Create runway
-            const runwayGeometry = new THREE.PlaneGeometry(20, 100);
-            const runwayMaterial = new THREE.MeshBasicMaterial({ color: 0x333333 });
-            runway = new THREE.Mesh(runwayGeometry, runwayMaterial);
-            runway.rotation.x = -Math.PI / 2;
-            scene.add(runway);
-
-            // Create wind arrow
-            const arrowGeometry = new THREE.ConeGeometry(1, 5, 32);
-            const arrowMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 });
-            windArrow = new THREE.Mesh(arrowGeometry, arrowMaterial);
-            windArrow.position.y = 10;
-            scene.add(windArrow);
-
-            camera.position.set(0, 50, 50);
-            camera.lookAt(scene.position);
-
-            animate();
-        }
-
-        function animate() {
-            requestAnimationFrame(animate);
-            renderer.render(scene, camera);
-        }
-
-        function updateWindVisualization(windSpeed, windDirection, runwayHeading) {
-            const angle = (windDirection - runwayHeading) * Math.PI / 180;
-            windArrow.rotation.y = angle;
-            windArrow.scale.y = Math.min(windSpeed / 10, 5);  // Scale arrow based on wind speed
-        }
-
-        function calculateWindComponents() {
-            const windSpeed = parseFloat(document.getElementById('wind-speed').value);
-            const windDirection = parseFloat(document.getElementById('wind-direction').value);
-            const runwayHeading = parseFloat(document.getElementById('runway-heading').value);
-            const resultElement = document.getElementById('wind-result');
-
-            if (isNaN(windSpeed) || isNaN(windDirection) || isNaN(runwayHeading)) {
-                resultElement.textContent = 'Please enter valid wind speed, direction, and runway heading.';
-                return;
-            }
-
-            const angle = (windDirection - runwayHeading) * Math.PI / 180;
-            const headwind = round(windSpeed * Math.cos(angle), 1);
-            const crosswind = round(windSpeed * Math.sin(angle), 1);
-
-            resultElement.textContent = `Headwind: ${Math.abs(headwind)} knots ${headwind >= 0 ? 'headwind' : 'tailwind'}, Crosswind: ${Math.abs(crosswind)} knots ${crosswind >= 0 ? 'from right' : 'from left'}`;
-
-            updateWindVisualization(windSpeed, windDirection, runwayHeading);
-        }
-
-
         function drawWindVisualization(windSpeed, windDirection, runwayHeading) {
             const canvas = document.getElementById('wind-canvas');
             const ctx = canvas.getContext('2d');
@@ -509,6 +479,44 @@
             drawWindVisualization(windSpeed, windDirection, runwayHeading);
         }
 
+        function calculateTDS() {
+            const time = parseFloat(document.getElementById('tds-time').value);
+            const distance = parseFloat(document.getElementById('tds-distance').value);
+            const speed = parseFloat(document.getElementById('tds-speed').value);
+            const resultElement = document.getElementById('tds-result');
+
+            if (isNaN(time) && isNaN(distance) && isNaN(speed)) {
+                resultElement.textContent = 'Please enter at least two values.';
+                return;
+            }
+
+            if (!isNaN(time) && !isNaN(distance) && isNaN(speed)) {
+                const calculatedSpeed = round(distance / time, 1);
+                resultElement.textContent = `Speed: ${calculatedSpeed} knots`;
+            } else if (!isNaN(time) && isNaN(distance) && !isNaN(speed)) {
+                const calculatedDistance = round(speed * time, 1);
+                resultElement.textContent = `Distance: ${calculatedDistance} NM`;
+            } else if (isNaN(time) && !isNaN(distance) && !isNaN(speed)) {
+                const calculatedTime = round(distance / speed, 2);
+                resultElement.textContent = `Time: ${calculatedTime} hours`;
+            } else {
+                resultElement.textContent = 'Please enter exactly two values to calculate the third.';
+            }
+        }
+
+        function calculateFuel() {
+            const fuelConsumption = parseFloat(document.getElementById('fuel-gph').value);
+            const flightTime = parseFloat(document.getElementById('fuel-time').value);
+            const resultElement = document.getElementById('fuel-result');
+
+            if (isNaN(fuelConsumption) || isNaN(flightTime)) {
+                resultElement.textContent = 'Please enter valid fuel consumption and flight time.';
+                return;
+            }
+
+            const fuelRequired = round(fuelConsumption * flightTime, 1);
+            resultElement.textContent = `Fuel required: ${fuelRequired} gallons`;
+        }
 
         function openTab(evt, tabName) {
             const tabContents = document.getElementsByClassName("tab-content");
@@ -524,7 +532,7 @@
             document.getElementById(tabName).classList.add("active");
             evt.currentTarget.classList.add("active");
 
-           if (tabName === 'wind') {
+            if (tabName === 'wind') {
                 const canvas = document.getElementById('wind-canvas');
                 canvas.width = canvas.offsetWidth;
                 canvas.height = canvas.offsetHeight;
@@ -539,14 +547,11 @@
         document.getElementById('wind-speed').addEventListener('input', calculateWindComponents);
         document.getElementById('wind-direction').addEventListener('input', calculateWindComponents);
         document.getElementById('runway-heading').addEventListener('input', calculateWindComponents);
-
-        window.addEventListener('resize', function() {
-            if (renderer) {
-                camera.aspect = window.innerWidth / window.innerHeight;
-                camera.updateProjectionMatrix();
-                renderer.setSize(window.innerWidth, window.innerHeight);
-            }
-        });
+        document.getElementById('tds-time').addEventListener('input', calculateTDS);
+        document.getElementById('tds-distance').addEventListener('input', calculateTDS);
+        document.getElementById('tds-speed').addEventListener('input', calculateTDS);
+        document.getElementById('fuel-gph').addEventListener('input', calculateFuel);
+        document.getElementById('fuel-time').addEventListener('input', calculateFuel);
 
         window.addEventListener('resize', function() {
             const canvas = document.getElementById('wind-canvas');
