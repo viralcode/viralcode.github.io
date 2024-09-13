@@ -115,9 +115,9 @@
             font-weight: bold;
             color: var(--secondary-color);
         }
-        #wind-canvas {
+         #wind-canvas {
             width: 100%;
-            height: 200px;
+            height: 300px;
             border: 1px solid #ddd;
             border-radius: 4px;
         }
@@ -426,9 +426,9 @@
             // Draw runway
             ctx.save();
             ctx.translate(width / 2, height / 2);
-            ctx.rotate(runwayHeading * Math.PI / 180);
+            ctx.rotate((runwayHeading - 90) * Math.PI / 180); // Rotate to match runway heading
             ctx.fillStyle = '#333';
-            ctx.fillRect(-width / 4, -height / 20, width / 2, height / 10);
+            ctx.fillRect(-width / 4, -10, width / 2, 20);
             ctx.restore();
 
             // Draw wind arrow
@@ -437,15 +437,16 @@
             ctx.rotate((windDirection - 90) * Math.PI / 180);
             ctx.beginPath();
             ctx.moveTo(0, 0);
-            ctx.lineTo(windSpeed * 2, 0);
-            ctx.lineTo(windSpeed * 2 - 10, -5);
-            ctx.lineTo(windSpeed * 2 - 10, 5);
-            ctx.closePath();
-            ctx.fillStyle = 'red';
-            ctx.fill();
+            ctx.lineTo(0, -windSpeed * 2); // Length proportional to wind speed
+            ctx.lineTo(-5, -windSpeed * 2 + 10);
+            ctx.moveTo(0, -windSpeed * 2);
+            ctx.lineTo(5, -windSpeed * 2 + 10);
+            ctx.strokeStyle = 'red';
+            ctx.lineWidth = 2;
+            ctx.stroke();
             ctx.restore();
 
-            // Draw compass
+            // Draw center point
             ctx.beginPath();
             ctx.arc(width / 2, height / 2, 5, 0, 2 * Math.PI);
             ctx.fillStyle = 'black';
@@ -453,13 +454,14 @@
 
             // Draw labels
             ctx.fillStyle = 'black';
-            ctx.font = '12px Arial';
+            ctx.font = '14px Arial';
             ctx.textAlign = 'center';
             ctx.fillText(`Runway: ${runwayHeading}°`, width / 2, height - 10);
             ctx.fillText(`Wind: ${windDirection}° at ${windSpeed} kts`, width / 2, 20);
         }
 
-        function calculateWindComponents() {
+
+         function calculateWindComponents() {
             const windSpeed = parseFloat(document.getElementById('wind-speed').value);
             const windDirection = parseFloat(document.getElementById('wind-direction').value);
             const runwayHeading = parseFloat(document.getElementById('runway-heading').value);
@@ -470,9 +472,14 @@
                 return;
             }
 
-            const angle = (windDirection - runwayHeading) * Math.PI / 180;
-            const headwind = round(windSpeed * Math.cos(angle), 1);
-            const crosswind = round(windSpeed * Math.sin(angle), 1);
+            // Calculate angle difference
+            let angle = windDirection - runwayHeading;
+            angle = ((angle + 180) % 360) - 180; // Normalize angle to range [-180, 180]
+
+            const angleRad = angle * Math.PI / 180;
+
+            const headwind = round(windSpeed * Math.cos(angleRad), 1);
+            const crosswind = round(windSpeed * Math.sin(angleRad), 1);
 
             resultElement.textContent = `Headwind: ${Math.abs(headwind)} knots ${headwind >= 0 ? 'headwind' : 'tailwind'}, Crosswind: ${Math.abs(crosswind)} knots ${crosswind >= 0 ? 'from right' : 'from left'}`;
 
@@ -558,7 +565,6 @@
             if (canvas) {
                 canvas.width = canvas.offsetWidth;
                 canvas.height = canvas.offsetHeight;
-                calculateWindComponents();
             }
         });
     </script>
