@@ -1,262 +1,296 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cessna 172M Performance Calculator</title>
+    <title>Cessna 172M E6B Performance Calculator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        :root {
-            --primary-color: #3498db;
-            --secondary-color: #2c3e50;
-            --background-color: #ecf0f1;
-            --text-color: #333;
-            --input-background: #fff;
-            --input-border: #bdc3c7;
-        }
-        body {
-            font-family: 'Arial', sans-serif;
-            line-height: 1.6;
-            color: var(--text-color);
-            background-color: var(--background-color);
-            margin: 0;
-            padding: 20px;
-            box-sizing: border-box;
-        }
-        .container {
-            max-width: 1000px;
-            margin: 0 auto;
-            background-color: #fff;
-            border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
-            overflow: hidden;
-        }
-        h1, h2 {
-            color: var(--secondary-color);
-            text-align: center;
-            padding: 20px 0;
-            margin: 0;
-        }
-        h1 {
-            background-color: var(--primary-color);
-            color: #fff;
-        }
-        .tab-container {
-            display: flex;
-            flex-wrap: wrap;
-            background-color: var(--secondary-color);
-        }
-        .tab {
-            padding: 15px 20px;
-            cursor: pointer;
-            background-color: transparent;
-            border: none;
-            color: #fff;
-            font-size: 16px;
-            transition: background-color 0.3s;
-            flex: 1;
-            text-align: center;
-        }
-        .tab.active {
-            background-color: var(--primary-color);
-        }
+        /* Add this style to hide all tab contents initially except the active one */
         .tab-content {
             display: none;
-            padding: 20px;
         }
         .tab-content.active {
             display: block;
         }
-        .input-container {
+
+        /* Add styles for the canvas */
+        #wind-canvas {
+            width: 100%; /* Ensure it takes the full width of its container */
+            height: 300px; /* Set a fixed height */
+            background-color: #f3f4f6; /* Optional: adds a background color to make the canvas visible */
+        }
+
+        /* Additional styles for enhanced result display */
+        .result-card {
+            background-color: #ffffff; /* White background */
+            border-radius: 0.5rem; /* Rounded corners */
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Subtle shadow */
+            padding: 1rem; /* Padding around the content */
+            margin-top: 1rem; /* Space above the card */
             display: flex;
-            flex-wrap: wrap;
-            gap: 20px;
-            margin-bottom: 20px;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
         }
-        .input-group {
-            flex: 1 1 200px;
+
+        .result-title {
+            color: #3182ce; /* Blue color */
+            font-size: 1.25rem; /* Larger font size */
+            font-weight: 600; /* Semi-bold font weight */
+            margin-bottom: 0.5rem; /* Space below the title */
         }
-        label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: bold;
-            color: var(--secondary-color);
+
+        .result-value {
+            color: #4a5568; /* Dark gray color */
+            font-size: 1.5rem; /* Even larger font size */
+            font-weight: 700; /* Bold font weight */
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
-        input {
-            width: 100%;
+
+        .result-icon {
+            width: 24px; /* Icon size */
+            height: 24px; /* Icon size */
+            margin-right: 0.5rem; /* Space after the icon */
+        }
+
+        /* Calculator-like styles for all elements */
+        .calculator-grid, .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); /* Flexible grid layout */
+            gap: 10px;
             padding: 10px;
-            border: 1px solid var(--input-border);
-            border-radius: 4px;
-            box-sizing: border-box;
+        }
+
+        .calculator-button, button {
+            background-color: #f3f4f6;
+            border: none;
+            padding: 15px;
+            border-radius: 5px;
             font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s;
         }
-        .result-container {
-            overflow-x: auto;
+
+        .calculator-button:hover, button:hover {
+            background-color: #e2e8f0;
         }
-        table {
+
+        .input-field, input[type="number"], input[type="text"] {
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #cbd5e1;
             width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
         }
-        th, td {
-            border: 1px solid var(--input-border);
-            padding: 12px;
-            text-align: left;
-        }
-        th {
-            background-color: var(--primary-color);
-            color: #fff;
-        }
-        .error {
-            color: #e74c3c;
-            margin-top: 10px;
-        }
-        .info {
-            margin-top: 10px;
-            font-weight: bold;
-            color: var(--secondary-color);
-        }
-         #wind-canvas {
-            width: 100%;
-            height: 500px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-        }
-        @media (max-width: 600px) {
-            .tab-container {
-                flex-direction: column;
-            }
-            .input-group {
-                flex: 1 1 100%;
-            }
+
+        /* Adjust the container to center the calculator */
+        .container {
+            max-width: 600px; /* Adjusted width for better layout */
+            margin: 50px auto; /* Centering */
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            background-color: #ffffff;
         }
     </style>
 </head>
-<body>
-    <div class="container">
-        <h1>Cessna 172M Performance Calculator</h1>
-        
-        <div class="tab-container">
-            <button class="tab active" onclick="openTab(event, 'performance')">Performance</button>
-            <button class="tab" onclick="openTab(event, 'temp-deviation')">Temperature Deviation</button>
-            <button class="tab" onclick="openTab(event, 'wind')">Wind Components</button>
-            <button class="tab" onclick="openTab(event, 'tds')">Time/Distance/Speed</button>
-            <button class="tab" onclick="openTab(event, 'fuel')">Fuel Calculations</button>
-        </div>
 
-        <div id="performance" class="tab-content active">
-            <h2>Cruise Performance</h2>
-            <div class="input-container">
-                <div class="input-group">
-                    <label for="temperature">Temperature (°C):</label>
-                    <input type="number" id="temperature" placeholder="Enter temperature">
-                </div>
-                <div class="input-group">
-                    <label for="altitude">Pressure Altitude (ft):</label>
-                    <input type="number" id="altitude" placeholder="Enter altitude">
-                </div>
-            </div>
-            <div id="error" class="error"></div>
-            <div id="tempInfo" class="info"></div>
-            <div class="result-container">
-                <table id="resultTable">
-                    <thead>
-                        <tr>
-                            <th>RPM</th>
-                            <th>BHP</th>
-                            <th>KTAS</th>
-                            <th>GPH</th>
-                        </tr>
-                    </thead>
-                    <tbody></tbody>
-                </table>
-            </div>
-        </div>
+<body class="bg-gray-100 font-sans">
+    <div class="container mx-auto p-4 max-w-6xl">
+        <h1 class="text-3xl font-bold text-center mb-8 text-blue-600">Cessna 172M E6B Performance Calculator</h1>
 
-        <div id="temp-deviation" class="tab-content">
-            <h2>Temperature Deviation Calculator</h2>
-            <div class="input-container">
-                <div class="input-group">
-                    <label for="dev-temperature">Temperature (°C):</label>
-                    <input type="number" id="dev-temperature" placeholder="Enter temperature">
-                </div>
-                <div class="input-group">
-                    <label for="dev-altitude">Pressure Altitude (ft):</label>
-                    <input type="number" id="dev-altitude" placeholder="Enter altitude">
-                </div>
+        <div class="bg-white rounded-lg shadow-lg overflow-hidden">
+            <div class="flex flex-wrap">
+                <button class="tab active flex-1 py-3 px-4 text-center font-medium text-gray-700 bg-gray-200 hover:bg-blue-500 hover:text-white transition-colors" onclick="openTab(event, 'performance')">Performance</button>
+                <button class="tab flex-1 py-3 px-4 text-center font-medium text-gray-700 bg-gray-200 hover:bg-blue-500 hover:text-white transition-colors" onclick="openTab(event, 'temp-deviation')">Temperature Deviation</button>
+                <button class="tab flex-1 py-3 px-4 text-center font-medium text-gray-700 bg-gray-200 hover:bg-blue-500 hover:text-white transition-colors" onclick="openTab(event, 'wind')">Wind Components</button>
+                <button class="tab flex-1 py-3 px-4 text-center font-medium text-gray-700 bg-gray-200 hover:bg-blue-500 hover:text-white transition-colors" onclick="openTab(event, 'tds')">Time/Distance/Speed</button>
+                <button class="tab flex-1 py-3 px-4 text-center font-medium text-gray-700 bg-gray-200 hover:bg-blue-500 hover:text-white transition-colors" onclick="openTab(event, 'fuel')">Fuel Calculations</button>
+                <button class="tab flex-1 py-3 px-4 text-center font-medium text-gray-700 bg-gray-200 hover:bg-blue-500 hover:text-white transition-colors" onclick="openTab(event, 'density-altitude')">Density Altitude</button>
+                <button class="tab flex-1 py-3 px-4 text-center font-medium text-gray-700 bg-gray-200 hover:bg-blue-500 hover:text-white transition-colors" onclick="openTab(event, 'true-airspeed')">True Airspeed</button>
+                <button class="tab flex-1 py-3 px-4 text-center font-medium text-gray-700 bg-gray-200 hover:bg-blue-500 hover:text-white transition-colors" onclick="openTab(event, 'metar-taf')">METAR & TAF</button>
             </div>
-            <div id="dev-result" class="info"></div>
-        </div>
 
-        <div id="wind" class="tab-content">
-            <h2>Wind Component Calculator</h2>
-            <div class="input-container">
-                <div class="input-group">
-                    <label for="wind-speed">Wind Speed (knots):</label>
-                    <input type="number" id="wind-speed" placeholder="Enter wind speed">
+            <div id="performance" class="tab-content active p-6">
+                <h2 class="text-2xl font-semibold mb-4 text-gray-800">Cruise Performance</h2>
+                <div class="calculator-grid">
+                    <input type="text" id="temperature" class="input-field" placeholder="Temperature (°C)">
+                    <input type="text" id="altitude" class="input-field" placeholder="Altitude (ft)">
+                    <button class="calculator-button" onclick="calculatePerformance()">Calculate</button>
+                    <button class="calculator-button" onclick="resetInputs()">Clear</button>
                 </div>
-                <div class="input-group">
-                    <label for="wind-direction">Wind Direction (degrees):</label>
-                    <input type="number" id="wind-direction" placeholder="Enter wind direction">
-                </div>
-                <div class="input-group">
-                    <label for="runway-heading">Runway Heading (degrees):</label>
-                    <input type="number" id="runway-heading" placeholder="Enter runway heading">
+                <div id="error" class="text-red-500 mb-2"></div>
+                <div id="tempInfo" class="text-blue-600 font-medium mb-4"></div>
+                <div class="overflow-x-auto">
+                    <table id="resultTable" class="w-full border-collapse">
+                        <thead>
+                            <tr class="bg-gray-200">
+                                <th class="p-2 text-left">RPM</th>
+                                <th class="p-2 text-left">BHP</th>
+                                <th class="p-2 text-left">KTAS</th>
+                                <th class="p-2 text-left">GPH</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
                 </div>
             </div>
-            <div id="wind-result" class="info"></div>
-            <canvas id="wind-canvas"></canvas>
-        </div>
 
-        <div id="tds" class="tab-content">
-            <h2>Time/Distance/Speed Calculator</h2>
-            <div class="input-container">
-                <div class="input-group">
-                    <label for="tds-time">Time (hours):</label>
-                    <input type="number" id="tds-time" placeholder="Enter time">
+            <div id="temp-deviation" class="tab-content p-6">
+                <h2 class="text-2xl font-semibold mb-4 text-gray-800">Temperature Deviation Calculator</h2>
+                <div class="calculator-grid">
+                    <input type="number" id="dev-temperature" class="input-field" placeholder="Temperature (°C)">
+                    <input type="number" id="dev-altitude" class="input-field" placeholder="Altitude (ft)">
+                    <button class="calculator-button" onclick="calculateDeviation()">Calculate</button>
+                    <button class="calculator-button" onclick="resetDeviationInputs()">Clear</button>
                 </div>
-                <div class="input-group">
-                    <label for="tds-distance">Distance (NM):</label>
-                    <input type="number" id="tds-distance" placeholder="Enter distance">
-                </div>
-                <div class="input-group">
-                    <label for="tds-speed">Speed (knots):</label>
-                    <input type="number" id="tds-speed" placeholder="Enter speed">
-                </div>
+                <div id="dev-result" class="text-blue-600 font-medium mb-4"></div>
             </div>
-            <div id="tds-result" class="info"></div>
-        </div>
 
-        <div id="fuel" class="tab-content">
-            <h2>Fuel Calculator</h2>
-            <div class="input-container">
-                <div class="input-group">
-                    <label for="fuel-gph">Fuel Consumption (GPH):</label>
-                    <input type="number" id="fuel-gph" placeholder="Enter fuel consumption">
+            <div id="wind" class="tab-content p-6">
+                <h2 class="text-2xl font-semibold mb-4 text-gray-800">Wind Component Calculator</h2>
+                <div class="calculator-grid">
+                    <input type="number" id="wind-speed" class="input-field" placeholder="Wind Speed (knots)">
+                    <input type="number" id="wind-direction" class="input-field" placeholder="Wind Direction (degrees)">
+                    <input type="number" id="runway-heading" class="input-field" placeholder="Runway Heading (degrees)">
+                    <button class="calculator-button" onclick="calculateWindComponents()">Calculate</button>
+                    <button class="calculator-button" onclick="resetWindInputs()">Clear</button>
                 </div>
-                <div class="input-group">
-                    <label for="fuel-time">Flight Time (hours):</label>
-                    <input type="number" id="fuel-time" placeholder="Enter flight time">
+                <div id="wind-result" class="result-card">
+                    <div class="result-title">Wind Components:</div>
+                    <div class="result-value">
+                        <img src="headwind-icon.png" alt="Headwind" class="result-icon">
+                        <span id="headwind-result"></span>
+                    </div>
+                    <div class="result-value">
+                        <img src="crosswind-icon.png" alt="Crosswind" class="result-icon">
+                        <span id="crosswind-result"></span>
+                    </div>
+                </div>
+                <canvas id="wind-canvas" class="w-full h-64 border border-gray-300 rounded-md"></canvas>
+            </div>
+
+            <div id="tds" class="tab-content p-6">
+                <h2 class="text-2xl font-semibold mb-4 text-gray-800">Time/Distance/Speed Calculator</h2>
+                <div class="calculator-grid">
+                    <input type="number" id="tds-time" class="input-field" placeholder="Time (hours)">
+                    <input type="number" id="tds-distance" class="input-field" placeholder="Distance (NM)">
+                    <input type="number" id="tds-speed" class="input-field" placeholder="Speed (knots)">
+                    <button class="calculator-button" onclick="calculateTDS()">Calculate</button>
+                    <button class="calculator-button" onclick="resetTDSInputs()">Clear</button>
+                </div>
+                <div id="tds-result" class="text-blue-600 font-medium mb-4"></div>
+            </div>
+
+            <div id="fuel" class="tab-content p-6">
+                <h2 class="text-2xl font-semibold mb-4 text-gray-800">Fuel Calculator</h2>
+                <div class="calculator-grid">
+                    <input type="number" id="fuel-gph" class="input-field" placeholder="Fuel Consumption (GPH)">
+                    <input type="number" id="fuel-time" class="input-field" placeholder="Flight Time (hours)">
+                    <button class="calculator-button" onclick="calculateFuel()">Calculate</button>
+                    <button class="calculator-button" onclick="resetFuelInputs()">Clear</button>
+                </div>
+                <div id="fuel-result" class="result-card">
+                    <div class="result-title">Fuel Required:</div>
+                    <div class="result-value text-blue-600 font-medium mb-4"></div>
                 </div>
             </div>
-            <div id="fuel-result" class="info"></div>
+
+            <div id="density-altitude" class="tab-content p-6">
+                <h2 class="text-2xl font-semibold mb-4 text-gray-800">Density Altitude Calculator</h2>
+                <div class="calculator-grid">
+                    <input type="number" id="da-pressure-altitude" class="input-field" placeholder="Pressure Altitude (ft)">
+                    <input type="number" id="da-temperature" class="input-field" placeholder="Temperature (°C)">
+                    <button class="calculator-button" onclick="calculateDensityAltitude()">Calculate</button>
+                    <button class="calculator-button" onclick="resetDensityAltitudeInputs()">Clear</button>
+                </div>
+                <div id="da-result" class="result-card">
+                    <div class="result-title">Density Altitude:</div>
+                    <div class="result-value text-blue-600 font-medium mb-4"></div>
+                </div>
+            </div>
+
+            <div id="true-airspeed" class="tab-content p-6">
+                <h2 class="text-2xl font-semibold mb-4 text-gray-800">True Airspeed Calculator</h2>
+                <div class="calculator-grid">
+                    <input type="number" id="tas-indicated-airspeed" class="input-field" placeholder="Indicated Airspeed (knots)">
+                    <input type="number" id="tas-pressure-altitude" class="input-field" placeholder="Pressure Altitude (ft)">
+                    <input type="number" id="tas-temperature" class="input-field" placeholder="Temperature (°C)">
+                    <button class="calculator-button" onclick="calculateTrueAirspeed()">Calculate</button>
+                    <button class="calculator-button" onclick="resetTrueAirspeedInputs()">Clear</button>
+                </div>
+                <div id="tas-result" class="result-card">
+                    <div class="result-title">True Airspeed:</div>
+                    <div class="result-value text-blue-600 font-medium mb-4"></div>
+                </div>
+            </div>
+
+            <div id="metar-taf" class="tab-content p-6">
+                <h2 class="text-2xl font-semibold mb-4 text-gray-800">METAR and TAF Data</h2>
+                <input type="text" id="airport-code" class="input-field" placeholder="Enter Airport ICAO Code">
+                <button class="calculator-button" onclick="fetchMetarTaf()">Get Data</button>
+                <div id="metar-result" class="text-blue-600 font-medium mb-4"></div>
+                <div id="taf-result" class="text-blue-600 font-medium mb-4"></div>
+            </div>
         </div>
     </div>
 
     <script>
+        let particles = [];
+        let windParams = {
+            speed: 0,
+            direction: 0,
+            runwayHeading: 0,
+            crosswind: 0
+        };
+
+        function createParticle(width, height, windAngleRad) {
+            // Create particles across the entire canvas
+            return {
+                x: Math.random() * width,
+                y: Math.random() * height,
+                size: 1 + Math.random() * 2,
+                speed: 1 + Math.random() * 0.5,
+                angle: windAngleRad
+            };
+        }
+
+        function compassToCanvasAngle(degrees) {
+            return (degrees - 90) * Math.PI / 180;
+        }
+
+        function initializeParticles() {
+            particles = [];
+            const numParticles = 200;
+            const canvas = document.getElementById('wind-canvas');
+            const width = canvas.width;
+            const height = canvas.height;
+
+            // Convert wind direction to radians, and adjust for canvas coordinate system
+            // Adjusting the formula to correctly reflect the wind direction
+            const windAngleRad = (270 - windParams.direction + 360) % 360 * Math.PI / 180;
+
+            for (let i = 0; i < numParticles; i++) {
+                particles.push(createParticle(width, height, windAngleRad));
+            }
+        }
+
         const performanceData = [
             {
                 altitude: 2000,
                 temperatures: {
                     below: { temp: -5, rpm: [2550, 2500, 2400, 2300, 2200], bhp: [80, 76, 68, 61, 55], ktas: [114, 111, 107, 102, 96], gph: [8.8, 8.3, 7.5, 6.9, 6.4] },
                     standard: { temp: 15, rpm: [2550, 2500, 2400, 2300, 2200], bhp: [75, 71, 64, 58, 52], ktas: [113, 111, 107, 101, 95], gph: [8.2, 7.8, 7.2, 6.7, 6.2] },
-                    above: { temp: 35, rpm: [2550, 2500, 2400, 2300, 2200], bhp: [71, 67, 61, 55, 49], ktas: [113, 111, 106, 99, 93], gph: [7.8, 7.5, 6.9, 6.5, 6.1] }
+                    above: { temp: 35, rpm: [2550, 2500, 2400, 2300, 2200], bhp: [71, 67, 61, 55, 49], ktas: [113, 111, 106, 99, 93], gph: [7.8, 7.5, 7.0, 6.5, 6.1] }
                 }
             },
             {
                 altitude: 4000,
                 temperatures: {
                     below: { temp: -5, rpm: [2600, 2500, 2400, 2300, 2200], bhp: [80, 72, 65, 58, 52], ktas: [116, 111, 107, 101, 95], gph: [8.8, 7.9, 7.3, 6.7, 6.3] },
-                    standard: { temp: 15, rpm: [2600, 2500, 2400, 2300, 2200], bhp: [75, 68, 61, 55, 49], ktas: [116, 111, 106, 100, 93], gph: [8.3, 7.5, 6.9, 6.5, 6.1] },
+                    standard: { temp: 15, rpm: [2600, 2500, 2400, 2300, 2200], bhp: [75, 68, 61, 55, 49], ktas: [116, 111, 106, 100, 93], gph: [8.3, 7.5, 7.0, 6.5, 6.1] },
                     above: { temp: 35, rpm: [2600, 2500, 2400, 2300, 2200], bhp: [71, 64, 58, 53, 47], ktas: [116, 110, 104, 98, 92], gph: [7.8, 7.2, 6.7, 6.3, 5.9] }
                 }
             },
@@ -412,56 +446,7 @@
             resultElement.textContent = `Temperature is ${Math.abs(round(deviation))}°C ${deviation >= 0 ? 'above' : 'below'} standard (${round(standardTemp)}°C)`;
         }
 
-        let scene, camera, renderer, runway, windArrow;
-
-        function drawWindVisualization(windSpeed, windDirection, runwayHeading) {
-            const canvas = document.getElementById('wind-canvas');
-            const ctx = canvas.getContext('2d');
-            const width = canvas.width;
-            const height = canvas.height;
-
-            // Clear canvas
-            ctx.clearRect(0, 0, width, height);
-
-            // Draw runway
-            ctx.save();
-            ctx.translate(width / 2, height / 2);
-            ctx.rotate((runwayHeading - 90) * Math.PI / 180); // Rotate to match runway heading
-            ctx.fillStyle = '#333';
-            ctx.fillRect(-width / 4, -10, width / 2, 20);
-            ctx.restore();
-
-            // Draw wind arrow
-            ctx.save();
-            ctx.translate(width / 2, height / 2);
-            ctx.rotate((windDirection - 90) * Math.PI / 180);
-            ctx.beginPath();
-            ctx.moveTo(0, 0);
-            ctx.lineTo(0, -windSpeed * 2); // Length proportional to wind speed
-            ctx.lineTo(-5, -windSpeed * 2 + 10);
-            ctx.moveTo(0, -windSpeed * 2);
-            ctx.lineTo(5, -windSpeed * 2 + 10);
-            ctx.strokeStyle = 'red';
-            ctx.lineWidth = 2;
-            ctx.stroke();
-            ctx.restore();
-
-            // Draw center point
-            ctx.beginPath();
-            ctx.arc(width / 2, height / 2, 5, 0, 2 * Math.PI);
-            ctx.fillStyle = 'black';
-            ctx.fill();
-
-            // Draw labels
-            ctx.fillStyle = 'black';
-            ctx.font = '14px Arial';
-            ctx.textAlign = 'center';
-            ctx.fillText(`Runway: ${runwayHeading}°`, width / 2, height - 10);
-            ctx.fillText(`Wind: ${windDirection}° at ${windSpeed} kts`, width / 2, 20);
-        }
-
-
-         function calculateWindComponents() {
+        function calculateWindComponents() {
             const windSpeed = parseFloat(document.getElementById('wind-speed').value);
             const windDirection = parseFloat(document.getElementById('wind-direction').value);
             const runwayHeading = parseFloat(document.getElementById('runway-heading').value);
@@ -472,7 +457,6 @@
                 return;
             }
 
-            // Calculate angle difference
             let angle = windDirection - runwayHeading;
             angle = ((angle + 180) % 360) - 180; // Normalize angle to range [-180, 180]
 
@@ -481,9 +465,18 @@
             const headwind = round(windSpeed * Math.cos(angleRad), 1);
             const crosswind = round(windSpeed * Math.sin(angleRad), 1);
 
-            resultElement.textContent = `Headwind: ${Math.abs(headwind)} knots ${headwind >= 0 ? 'headwind' : 'tailwind'}, Crosswind: ${Math.abs(crosswind)} knots ${crosswind >= 0 ? 'from right' : 'from left'}`;
+            resultElement.textContent =
+                `Headwind: ${Math.abs(headwind)} knots ${headwind >= 0 ? 'headwind' : 'tailwind'}, Crosswind: ${Math.abs(crosswind)} knots ${crosswind >= 0 ? 'from right' : 'from left'}`;
 
-            drawWindVisualization(windSpeed, windDirection, runwayHeading);
+            // Update wind parameters
+            windParams.speed = windSpeed;
+            windParams.direction = windDirection;
+            windParams.runwayHeading = runwayHeading;
+            windParams.crosswind = crosswind;
+
+            // Reset particles and start visualization
+            initializeParticles();
+            drawWindVisualization();
         }
 
         function calculateTDS() {
@@ -511,6 +504,45 @@
             }
         }
 
+        function drawRunway(ctx, width, height, runwayHeading) {
+            ctx.save();
+            ctx.translate(width / 2, height / 2);
+            ctx.rotate((runwayHeading - 90) * Math.PI / 180);
+            ctx.fillStyle = '#333';
+            ctx.fillRect(-width / 4, -10, width / 2, 20);
+
+            // Calculate runway numbers
+            let runwayNumber1 = Math.round(runwayHeading / 10);
+            runwayNumber1 = runwayNumber1 === 0 ? 36 : runwayNumber1;
+            let reciprocalHeading = (runwayHeading + 180) % 360;
+            let runwayNumber2 = Math.round(reciprocalHeading / 10);
+            runwayNumber2 = runwayNumber2 === 0 ? 36 : runwayNumber2;
+
+            // Draw first runway number
+            ctx.save();
+            ctx.translate(-width / 4 + 30, 0);
+            ctx.rotate(-((runwayHeading - 90) * Math.PI / 180));
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 24px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(runwayNumber1.toString().padStart(2, '0'), 0, 0);
+            ctx.restore();
+
+            // Draw second runway number
+            ctx.save();
+            ctx.translate(width / 4 - 30, 0);
+            ctx.rotate(-((reciprocalHeading - 90) * Math.PI / 180));
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 24px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(runwayNumber2.toString().padStart(2, '0'), 0, 0);
+            ctx.restore();
+
+            ctx.restore();
+        }
+
         function calculateFuel() {
             const fuelConsumption = parseFloat(document.getElementById('fuel-gph').value);
             const flightTime = parseFloat(document.getElementById('fuel-time').value);
@@ -522,50 +554,263 @@
             }
 
             const fuelRequired = round(fuelConsumption * flightTime, 1);
-            resultElement.textContent = `Fuel required: ${fuelRequired} gallons`;
+            resultElement.textContent = `${fuelRequired} gallons`;
+        }
+
+        function calculateDensityAltitude() {
+            const pressureAltitude = parseFloat(document.getElementById('da-pressure-altitude').value);
+            const temperature = parseFloat(document.getElementById('da-temperature').value);
+            const resultElement = document.getElementById('da-result');
+
+            if (isNaN(pressureAltitude) || isNaN(temperature)) {
+                resultElement.textContent = 'Please enter valid pressure altitude and temperature.';
+                return;
+            }
+
+            const standardTemp = 15 - (pressureAltitude / 1000) * 2;
+            const densityAltitude = pressureAltitude + (120 * (temperature - standardTemp));
+
+            resultElement.textContent = `${round(densityAltitude)} feet`;
+        }
+
+        function calculateTrueAirspeed() {
+            const indicatedAirspeed = parseFloat(document.getElementById('tas-indicated-airspeed').value);
+            const pressureAltitude = parseFloat(document.getElementById('tas-pressure-altitude').value);
+            const temperature = parseFloat(document.getElementById('tas-temperature').value);
+            const resultElement = document.getElementById('tas-result');
+
+            if (isNaN(indicatedAirspeed) || isNaN(pressureAltitude) || isNaN(temperature)) {
+                resultElement.textContent =
+                    'Please enter valid indicated airspeed, pressure altitude, and temperature.';
+                return;
+            }
+
+            const standardTemp = 15 - (pressureAltitude / 1000) * 2;
+            const tempDifference = temperature - standardTemp;
+            const trueAirspeed = indicatedAirspeed + (indicatedAirspeed * 0.02 * (tempDifference / 10));
+
+            resultElement.textContent = `${round(trueAirspeed, 1)} knots`;
+        }
+
+        function drawWindVisualization() {
+            const canvas = document.getElementById('wind-canvas');
+            const ctx = canvas.getContext('2d');
+            const width = canvas.width;
+            const height = canvas.height;
+
+            // Clear canvas
+            ctx.clearRect(0, 0, width, height);
+
+            // Draw runway with numbers on both ends
+            drawRunway(ctx, width, height, windParams.runwayHeading);
+
+            // Draw particles
+            updateAndDrawParticles(ctx, width, height);
+
+            // Add labels
+            ctx.fillStyle = 'black';
+            ctx.font = '14px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText(`Runway Heading: ${windParams.runwayHeading}°`, width / 2, height - 20);
+            ctx.fillText(`Wind: ${windParams.speed} knots from ${windParams.direction}°`, width / 2, 20);
+
+            // Draw wind direction arrow
+            drawWindArrow(ctx, width, height);
+
+            // Continue animation
+            requestAnimationFrame(drawWindVisualization);
+        }
+
+        function drawWindArrow(ctx, width, height) {
+            const arrowLength = 50;
+            const arrowWidth = 15;
+            const centerX = width / 2;
+            const centerY = height / 2;
+            const angle = (450 - windParams.direction) * Math.PI / 180;
+
+            ctx.save();
+            ctx.translate(centerX, centerY);
+            ctx.rotate(angle);
+
+            ctx.beginPath();
+            ctx.moveTo(0, 0);
+            ctx.lineTo(0, -arrowLength);
+            ctx.lineTo(-arrowWidth / 2, -arrowLength + arrowWidth);
+            ctx.lineTo(arrowWidth / 2, -arrowLength + arrowWidth);
+            ctx.closePath();
+
+            ctx.fillStyle = 'rgba(255, 0, 0, 0.7)';
+            ctx.fill();
+
+            ctx.restore();
+        }
+
+        function updateAndDrawParticles(ctx, width, height) {
+            const windSpeedFactor = windParams.speed / 10;
+            particles.forEach(particle => {
+                // Add slight randomness to simulate turbulence
+                const randomAngle = (Math.random() - 0.5) * 0.2;
+                const angle = particle.angle + randomAngle;
+
+                particle.x += Math.cos(angle) * particle.speed * windSpeedFactor;
+                particle.y += Math.sin(angle) * particle.speed * windSpeedFactor;
+
+                // Wrap particles around the canvas
+                particle.x = (particle.x + width) % width;
+                particle.y = (particle.y + height) % height;
+
+                // Draw particle
+                ctx.fillStyle = 'rgba(0, 0, 255, 0.5)';
+                ctx.beginPath();
+                ctx.arc(particle.x, particle.y, particle.size, 0, 2 * Math.PI);
+                ctx.fill();
+            });
+        }
+
+        function resetParticle(particle, width, height) {
+            const windAngleDeg = (windParams.direction + 180) % 360; // Adjust angle for reset
+            if (windAngleDeg >= 45 && windAngleDeg <= 135) {
+                // Wind towards the right
+                particle.x = 0;
+                particle.y = Math.random() * height;
+            } else if (windAngleDeg >= 225 && windAngleDeg <= 315) {
+                // Wind towards the left
+                particle.x = width;
+                particle.y = Math.random() * height;
+            } else if (windAngleDeg > 135 && windAngleDeg < 225) {
+                // Wind towards the top
+                particle.x = Math.random() * width;
+                particle.y = 0;
+            } else {
+                // Wind towards the bottom
+                particle.x = Math.random() * width;
+                particle.y = height;
+            }
+        }
+
+        function resetParticles() {
+            particles = [];
+            initializeParticles();
         }
 
         function openTab(evt, tabName) {
             const tabContents = document.getElementsByClassName("tab-content");
             for (let i = 0; i < tabContents.length; i++) {
-                tabContents[i].classList.remove("active");
+                tabContents[i].style.display = "none"; // Hide all tab contents
             }
 
             const tabs = document.getElementsByClassName("tab");
             for (let i = 0; i < tabs.length; i++) {
-                tabs[i].classList.remove("active");
+                tabs[i].className = tabs[i].className.replace(" active", ""); // Remove 'active' class
             }
 
-            document.getElementById(tabName).classList.add("active");
-            evt.currentTarget.classList.add("active");
+            document.getElementById(tabName).style.display = "block"; // Show the current tab
+            evt.currentTarget.className += " active"; // Set the current tab to active
 
             if (tabName === 'wind') {
-                const canvas = document.getElementById('wind-canvas');
-                canvas.width = canvas.offsetWidth;
-                canvas.height = canvas.offsetHeight;
-                calculateWindComponents();
+                initializeCanvas(); // Initialize the canvas when the 'Wind Components' tab is opened
             }
         }
 
+        function initializeCanvas() {
+            const canvas = document.getElementById('wind-canvas');
+            if (canvas.getContext) {
+                const ctx = canvas.getContext('2d');
+                canvas.width = canvas.offsetWidth;
+                canvas.height = canvas.offsetHeight;
+
+                // Clear the canvas
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+            }
+        }
+
+        // Add function to fetch METAR and TAF data
+        function fetchMetarTaf() {
+            const airportCode = document.getElementById('airport-code').value.trim();
+            const metarResultElement = document.getElementById('metar-result');
+            const tafResultElement = document.getElementById('taf-result');
+
+            if (!airportCode) {
+                metarResultElement.textContent = 'Please enter an airport ICAO code.';
+                return;
+            }
+
+            // Using a CORS proxy for development purposes
+            const proxyUrl = 'https://cors-anywhere.herokuapp.com/';
+            const apiUrl = `https://aviationweather.gov/api/data/dataserver?requestType=retrieve&dataSource=metars&stationString=${airportCode}&format=xml`;
+            const url = proxyUrl + apiUrl;
+
+            fetch(url)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.text();
+                })
+                .then(str => {
+                    const parser = new DOMParser();
+                    const xml = parser.parseFromString(str, "text/xml");
+                    const metars = xml.getElementsByTagName("METAR");
+                    let metarTexts = [];
+                    for (let i = 0; i < metars.length; i++) {
+                        const rawText = metars[i].getElementsByTagName("raw_text")[0].textContent;
+                        metarTexts.push(rawText);
+                    }
+                    metarResultElement.innerHTML = metarTexts.map(text => `<div>${text}</div>`).join('');
+                })
+                .catch(error => {
+                    metarResultElement.textContent = 'Failed to retrieve data.';
+                    console.error('Error fetching METAR/TAF data:', error);
+                });
+        }
+
+        // Event listeners
         document.getElementById('temperature').addEventListener('input', calculatePerformance);
         document.getElementById('altitude').addEventListener('input', calculatePerformance);
         document.getElementById('dev-temperature').addEventListener('input', calculateTempDeviation);
         document.getElementById('dev-altitude').addEventListener('input', calculateTempDeviation);
-        document.getElementById('wind-speed').addEventListener('input', calculateWindComponents);
-        document.getElementById('wind-direction').addEventListener('input', calculateWindComponents);
-        document.getElementById('runway-heading').addEventListener('input', calculateWindComponents);
+
+        document.getElementById('wind-speed').addEventListener('input', () => {
+            resetParticles();
+            calculateWindComponents();
+        });
+        document.getElementById('wind-direction').addEventListener('input', () => {
+            resetParticles();
+            calculateWindComponents();
+        });
+        document.getElementById('runway-heading').addEventListener('input', () => {
+            resetParticles();
+            calculateWindComponents();
+        });
+
         document.getElementById('tds-time').addEventListener('input', calculateTDS);
         document.getElementById('tds-distance').addEventListener('input', calculateTDS);
         document.getElementById('tds-speed').addEventListener('input', calculateTDS);
         document.getElementById('fuel-gph').addEventListener('input', calculateFuel);
         document.getElementById('fuel-time').addEventListener('input', calculateFuel);
+        document.getElementById('da-pressure-altitude').addEventListener('input', calculateDensityAltitude);
+        document.getElementById('da-temperature').addEventListener('input', calculateDensityAltitude);
+        document.getElementById('tas-indicated-airspeed').addEventListener('input', calculateTrueAirspeed);
+        document.getElementById('tas-pressure-altitude').addEventListener('input', calculateTrueAirspeed);
+        document.getElementById('tas-temperature').addEventListener('input', calculateTrueAirspeed);
+        document.getElementById('airport-code').addEventListener('input', fetchMetarTaf);
 
-        window.addEventListener('resize', function() {
+        window.addEventListener('load', function () {
             const canvas = document.getElementById('wind-canvas');
-            if (canvas) {
-                canvas.width = canvas.offsetWidth;
-                canvas.height = canvas.offsetHeight;
-            }
+            canvas.width = canvas.offsetWidth;
+            canvas.height = canvas.offsetHeight;
+
+            // Start the animation with default values
+            calculateWindComponents();
+        });
+
+        // Recalculate wind visualization on window resize
+        window.addEventListener('resize', function () {
+            const canvas = document.getElementById('wind-canvas');
+            canvas.width = canvas.offsetWidth;
+            canvas.height = canvas.offsetHeight;
+            resetParticles();
+            calculateWindComponents();
         });
     </script>
 </body>
